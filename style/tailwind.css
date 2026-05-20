@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@source "../src/**/*.rs";
+
+@layer components {
+	.app-notification {
+		@apply rounded-lg border p-4 shadow-sm;
+	}
+
+	.app-notification-title {
+		@apply text-sm font-semibold;
+	}
+
+	.app-notification-message {
+		@apply mt-1 text-xs;
+	}
+
+	.app-notification-danger {
+		@apply border-red-300 bg-red-50 text-red-800;
+	}
+}

@@ -1,0 +1,10 @@
+services:
+  wrtctrl:
+    build: .
+    environment:
+      WRTCTRL_CONFIG_FILE: /app/wrtctrl.toml
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    volumes:
+      - ./wrtctrl.toml:/app/wrtctrl.toml:ro

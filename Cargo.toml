@@ -1,0 +1,82 @@
+[package]
+name = "wrtctrl"
+version = "0.1.0"
+edition = "2024"
+authors = ["Fabian Affolter <fabian@affolter-engineering.ch>"]
+description = "Web application to control OpenWRT and Teltonika devices via JSON-RPC API"
+license = "MIT"
+homepage = "https://github.com/affolter-engineering/wrtctrl"
+repository = "https://github.com/affolter-engineering/wrtctrl"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+leptos = { version = "0.8", features = [] }
+leptos_meta = { version = "0.8" }
+leptos_router = { version = "0.8" }
+leptos_axum = { version = "0.8", optional = true }
+axum = { version = "0.8", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+tower = { version = "0.5", optional = true }
+tower-http = { version = "0.6", features = ["fs", "compression-gzip"], optional = true }
+http = "1"
+thiserror = "2"
+wasm-bindgen = "=0.2.117"
+console_error_panic_hook = { version = "0.1", optional = true }
+gloo-timers = { version = "0.3", optional = true, features = ["futures"] }
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"], optional = true }
+serde_json = "1"
+ssh2 = { version = "0.9", optional = true, features = ["vendored-openssl"] }
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"], optional = true }
+
+[features]
+default = []
+hydrate = [
+  "leptos/hydrate",
+  "dep:console_error_panic_hook",
+  "dep:gloo-timers",
+]
+ssr = [
+  "dep:axum",
+  "dep:tokio",
+  "dep:tower",
+  "dep:tower-http",
+  "dep:leptos_axum",
+  "dep:reqwest",
+  "dep:ssh2",
+  "dep:tracing",
+  "dep:tracing-subscriber",
+  "leptos/ssr",
+  "leptos_meta/ssr",
+  "leptos_router/ssr",
+]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[package.metadata.leptos]
+output-name = "wrtctrl"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "style/tailwind.css"
+tailwind-input-file = "style/tailwind.css"
+assets-dir = "public"
+site-addr = "0.0.0.0:3011"
+reload-port = 3012
+env = "DEV"
+bin-features = ["ssr"]
+lib-features = ["hydrate"]
+bin-default-features = false
+lib-default-features = false

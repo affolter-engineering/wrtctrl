@@ -1,0 +1,19 @@
+polling_interval = 30
+
+[[devices]]
+name = "RUT241"
+ip_address = ""
+username = ""
+password = ""
+
+[[devices]]
+name = "RUT950"
+ip_address = ""
+username = ""
+password = ""
+
+[[devices]]
+name = "OpenWRT 25.12"
+ip_address = ""
+username = ""
+password = ""

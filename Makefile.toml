@@ -1,0 +1,84 @@
+[config]
+default_to_workspace = false
+
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[tasks.dev]
+description = "Start the cargo-leptos dev server with hot-reload"
+command = "cargo"
+args = ["leptos", "watch"]
+
+[tasks.build]
+clear = true
+description = "Build the app for production"
+script = [
+	"cargo leptos build --release",
+	"WRTCTRL_EMBEDDED_JS=target/site/pkg/wrtctrl.js WRTCTRL_EMBEDDED_WASM=target/site/pkg/wrtctrl.wasm cargo build --release --no-default-features --features ssr --bin wrtctrl"
+]
+
+[tasks.build-dev]
+description = "Build the app in debug mode"
+command = "cargo"
+args = ["leptos", "build"]
+
+[tasks.prepare-embedded-css]
+description = "Generate site assets so CSS can be embedded into server binaries"
+command = "cargo"
+args = ["leptos", "build", "--release"]
+
+[tasks.check-musl]
+description = "Type-check SSR binary for x86_64-unknown-linux-musl"
+command = "cargo"
+args = ["check", "--target", "x86_64-unknown-linux-musl", "--no-default-features", "--features", "ssr"]
+
+[tasks.build-musl]
+description = "Build a static SSR binary for x86_64-unknown-linux-musl (transferable)"
+dependencies = ["prepare-embedded-css"]
+script = [
+	"env -u OPENSSL_NO_VENDOR WRTCTRL_EMBEDDED_CSS=target/tmp/tailwind.css WRTCTRL_EMBEDDED_JS=target/site/pkg/wrtctrl.js WRTCTRL_EMBEDDED_WASM=target/site/pkg/wrtctrl.wasm cargo zigbuild --release --target x86_64-unknown-linux-musl --no-default-features --features ssr --bin wrtctrl",
+	"echo 'Binary: target/x86_64-unknown-linux-musl/release/wrtctrl'"
+]
+
+[tasks.setup-musl-target]
+description = "No-op: musl target is declared in shell.nix via rust-overlay"
+script = ["echo 'musl target provided by Nix shell (rust-overlay)'"]
+
+[tasks.test]
+description = "Run all unit tests (SSR feature)"
+command = "cargo"
+args = ["test", "--features", "ssr"]
+
+[tasks.test-watch]
+description = "Run tests in watch mode"
+install_crate = "cargo-watch"
+command = "cargo"
+args = ["watch", "-x", "test --features ssr"]
+
+[tasks.fmt]
+description = "Format the source code"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.fmt-check]
+description = "Check formatting without applying changes"
+command = "cargo"
+args = ["fmt", "--", "--check"]
+
+[tasks.clippy]
+description = "Run clippy lints (SSR)"
+command = "cargo"
+args = ["clippy", "--features", "ssr", "--", "-D", "warnings"]
+
+[tasks.clean]
+description = "Remove build artefacts"
+command = "cargo"
+args = ["clean"]
+
+[tasks.check]
+description = "fmt-check + clippy"
+dependencies = ["fmt-check", "clippy"]
+
+[tasks.ci]
+description = "Full CI pipeline: check → test → build"
+dependencies = ["check", "test", "build"]
