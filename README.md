@@ -10,7 +10,6 @@ References:
 - https://documenter.getpostman.com/view/5972215/TVzNHeej#154b5d84-4065-4887-a5a8-c1f3b51fe9a6
 - https://techlibrary.doodlelabs.com/json-rpc-api-guide
 
-
 ```bash
 opkg update
 opkg install luci-mod-rpc luci-lib-ipkg luci-compat
