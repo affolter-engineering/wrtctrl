@@ -2,7 +2,7 @@
 
 Web application for monitoring OpenWrt-based devices and Teltonika routers through their HTTP JSON-RPC interfaces.
 
-The app reads a TOML configuration file, polls devices from the server side, and shows their current connection and system details in the UI. It supports the LuCI auth + exec flow used by OpenWrt and the ubus session flow used by Teltonika devices.
+The app reads a TOML configuration file, polls devices from the server side, and shows their current connection and system details in the UI. It supports the LuCI auth and exec flow used by OpenWrt and the ubus session flow used by Teltonika devices.
 
 References:
 
@@ -18,7 +18,7 @@ opkg install luci-mod-rpc luci-lib-ipkg luci-compat
 ```
 
 JSON-RPC API must be enabled on the device. Also, it need the be accessible. If you want to use
-it on the WAN side, add a firewall rule that allow access to 80/tcp and 443/tcp.
+it on the WAN side then add a firewall rule that allow access to 80/tcp and 443/tcp.
 
 Test the connection to the device:
 
