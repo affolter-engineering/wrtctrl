@@ -76,7 +76,7 @@ $ echo '
 Recommended: use the provided Nix shell to get all build tools and dependencies:
 
 ```bash
-$ nix-shell
+nix-shell
 ```
 
 The shell provides: rustc, cargo, cargo-make, cargo-leptos, tailwindcss, lld, wasm-bindgen-cli and binaryen (wasm-opt)
@@ -86,7 +86,7 @@ The shell provides: rustc, cargo, cargo-make, cargo-leptos, tailwindcss, lld, wa
 1. Enter the dev shell:
 
 ```bash
-$ nix-shell
+nix-shell
 ```
 
 2. Create a configuration file. Example `wrtctrl.toml` (use the *.sample file to get started):
@@ -113,7 +113,7 @@ password = "pasword"
 3. Start the hot-reload development server:
 
 ```bash
-$ cargo make dev
+cargo make dev
 ```
 
 4. Open: http://127.0.0.1:3011
@@ -123,25 +123,25 @@ $ cargo make dev
 Debug build:
 
 ```bash
-$ cargo make build-dev
+cargo make build-dev
 ```
 
 Release/musl build (static binary):
 
 ```bash
-$ cargo make build-musl
+cargo make build-musl
 ```
 
 Run formatting and checks:
 
 ```bash
-$ cargo make check
+cargo make check
 ```
 
 Full CI pipeline (check → test → build):
 
 ```bash
-$ cargo make ci
+cargo make ci
 ```
 
 ## Configuration file
@@ -171,8 +171,8 @@ The UI writes the same TOML layout back to disk when you save changes.
 Build and run in Docker:
 
 ```bash
-$ docker build -t wrtctrl .
-$ docker run -p 3021:3021 -v /etc/wrtctrl:/etc/wrtctrl wrtctrl
+docker build -t wrtctrl .
+docker run -p 3021:3021 -v /etc/wrtctrl:/etc/wrtctrl wrtctrl
 ```
 
 ## Author(s)
