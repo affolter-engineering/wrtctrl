@@ -10,7 +10,8 @@ fn format_bytes_const(name: &str, bytes: &[u8]) -> String {
 }
 
 fn main() {
-    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("missing CARGO_MANIFEST_DIR"));
+    let manifest_dir =
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("missing CARGO_MANIFEST_DIR"));
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("missing OUT_DIR"));
 
     let generated_tailwind_css_path = manifest_dir.join("target/tmp/tailwind.css");
@@ -61,7 +62,8 @@ fn main() {
     // If that happens, prefer the compiled tailwind output.
     if css.contains("@import \"tailwindcss\"") {
         if let Ok(compiled_css) = fs::read_to_string(&generated_tailwind_css_path) {
-            if !compiled_css.trim().is_empty() && !compiled_css.contains("@import \"tailwindcss\"") {
+            if !compiled_css.trim().is_empty() && !compiled_css.contains("@import \"tailwindcss\"")
+            {
                 css = compiled_css;
             }
         }
@@ -88,7 +90,10 @@ fn main() {
     println!("cargo:rerun-if-env-changed=WRTCTRL_EMBEDDED_CSS");
     println!("cargo:rerun-if-env-changed=WRTCTRL_EMBEDDED_JS");
     println!("cargo:rerun-if-env-changed=WRTCTRL_EMBEDDED_WASM");
-    println!("cargo:rerun-if-changed={}", generated_tailwind_css_path.display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        generated_tailwind_css_path.display()
+    );
     println!("cargo:rerun-if-changed={}", default_css_path.display());
     println!("cargo:rerun-if-changed={}", alternate_css_path.display());
     println!("cargo:rerun-if-changed={}", js_primary.display());
