@@ -61,8 +61,7 @@ async fn main() {
             let contents = std::fs::read_to_string(&candidate)
                 .map_err(|e| format!("Failed reading {source}: {e}"))?;
 
-            let parsed: toml::Value = contents
-                .parse()
+            let parsed: toml::Value = toml::from_str(&contents)
                 .map_err(|e| format!("Invalid TOML in {source}: {e}"))?;
 
             let server_table = parsed.get("server").and_then(|value| value.as_table());

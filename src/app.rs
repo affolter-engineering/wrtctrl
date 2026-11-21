@@ -931,12 +931,12 @@ fn DeviceCard(device: DeviceConfig, show_details: RwSignal<Option<String>>) -> i
         },
     );
 
-    let reboot_action = create_action(move |device: &DeviceConfig| {
+    let reboot_action = Action::new(move |device: &DeviceConfig| {
         let device = device.clone();
         async move { reboot_device_action(device).await }
     });
 
-    create_effect(move |_| {
+    Effect::new(move |_| {
         if let Some(result) = reboot_action.value().get() {
             match result {
                 Ok(_) => {
@@ -1066,7 +1066,7 @@ fn DeviceCard(device: DeviceConfig, show_details: RwSignal<Option<String>>) -> i
                 </Transition>
             </div>
 
-            {move || card_footer.get().map(|(title, summary)| view! {
+            {move || card_footer.get().map(|(_title, summary)| view! {
                 <div class="mt-3 border-t border-gray-700/50 pt-2 flex items-center justify-between gap-2 text-[11px]">
                     <span class="text-gray-400">{summary}</span>
                 </div>

@@ -5,7 +5,6 @@ edition = "2024"
 authors = ["Fabian Affolter <fabian@affolter-engineering.ch>"]
 description = "Web application to control OpenWRT and Teltonika devices via JSON-RPC API"
 license = "MIT"
-homepage = "https://github.com/affolter-engineering/wrtctrl"
 repository = "https://github.com/affolter-engineering/wrtctrl"
 
 [lib]
