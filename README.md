@@ -38,7 +38,7 @@ $ curl https://10.0.0.3/cgi-bin/luci/rpc/auth --data '
 `httpie`:
 
 ```bash
-$ $  echo '
+$ echo '
 {
   "id": 1,
   "method": "login",
