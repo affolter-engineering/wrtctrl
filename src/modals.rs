@@ -1,7 +1,9 @@
-use crate::app::{read_generic_config, read_toml_config, write_generic_config, write_toml_config, ConfigRefreshBus, DeviceConfig, GenericConfig};
+use crate::app::{
+    ConfigRefreshBus, DeviceConfig, GenericConfig, read_generic_config, read_toml_config,
+    write_generic_config, write_toml_config,
+};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-
 
 #[component]
 pub fn ConfigModal(show_config: RwSignal<bool>) -> impl IntoView {
@@ -130,7 +132,12 @@ pub fn DeviceDetailsModal(
                 if let Some(device) = devices.iter().find(|d| d.name == dev_name) {
                     name.set(device.name.clone());
                     comment.set(device.comment.clone().unwrap_or_default());
-                    device_type.set(device.device_type.clone().unwrap_or_else(|| "openwrt".to_string()));
+                    device_type.set(
+                        device
+                            .device_type
+                            .clone()
+                            .unwrap_or_else(|| "openwrt".to_string()),
+                    );
                     ip_address.set(device.ip_address.clone().unwrap_or_default());
                     username.set(device.username.clone().unwrap_or_default());
                     password.set(device.password.clone().unwrap_or_default());
@@ -159,26 +166,69 @@ pub fn DeviceDetailsModal(
             spawn_local(async move {
                 let mut config = match read_toml_config().await {
                     Ok(cfg) => cfg,
-                    Err(_) => { saving.set(false); return; }
+                    Err(_) => {
+                        saving.set(false);
+                        return;
+                    }
                 };
                 let devices = config.devices.get_or_insert_with(Vec::new);
                 if let Some(orig) = original.as_deref() {
                     if let Some(existing) = devices.iter_mut().find(|d| d.name == orig) {
                         existing.name = new_name.clone();
-                        existing.comment = if comment.is_empty() { None } else { Some(comment.clone()) };
-                        existing.device_type = if device_type.is_empty() { None } else { Some(device_type.clone()) };
-                        existing.ip_address = if ip_address.is_empty() { None } else { Some(ip_address.clone()) };
-                        existing.username = if username.is_empty() { None } else { Some(username.clone()) };
-                        existing.password = if password.is_empty() { None } else { Some(password.clone()) };
+                        existing.comment = if comment.is_empty() {
+                            None
+                        } else {
+                            Some(comment.clone())
+                        };
+                        existing.device_type = if device_type.is_empty() {
+                            None
+                        } else {
+                            Some(device_type.clone())
+                        };
+                        existing.ip_address = if ip_address.is_empty() {
+                            None
+                        } else {
+                            Some(ip_address.clone())
+                        };
+                        existing.username = if username.is_empty() {
+                            None
+                        } else {
+                            Some(username.clone())
+                        };
+                        existing.password = if password.is_empty() {
+                            None
+                        } else {
+                            Some(password.clone())
+                        };
                     }
                 } else {
                     devices.push(DeviceConfig {
                         name: new_name.clone(),
-                        comment: if comment.is_empty() { None } else { Some(comment.clone()) },
-                        device_type: if device_type.is_empty() { None } else { Some(device_type.clone()) },
-                        ip_address: if ip_address.is_empty() { None } else { Some(ip_address.clone()) },
-                        username: if username.is_empty() { None } else { Some(username.clone()) },
-                        password: if password.is_empty() { None } else { Some(password.clone()) },
+                        comment: if comment.is_empty() {
+                            None
+                        } else {
+                            Some(comment.clone())
+                        },
+                        device_type: if device_type.is_empty() {
+                            None
+                        } else {
+                            Some(device_type.clone())
+                        },
+                        ip_address: if ip_address.is_empty() {
+                            None
+                        } else {
+                            Some(ip_address.clone())
+                        },
+                        username: if username.is_empty() {
+                            None
+                        } else {
+                            Some(username.clone())
+                        },
+                        password: if password.is_empty() {
+                            None
+                        } else {
+                            Some(password.clone())
+                        },
                     });
                 }
                 let _ = write_toml_config(config).await;

@@ -4,10 +4,8 @@ pub mod app;
 pub mod device_clients;
 pub mod modals;
 
-
 #[cfg(feature = "ssr")]
 pub mod log_buffer;
-
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]

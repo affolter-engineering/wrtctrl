@@ -56,8 +56,8 @@ pub fn read_since(since_index: u64) -> Vec<LogEntry> {
 }
 
 // Tracing layer
-use tracing::{Event, Subscriber};
 use tracing::field::{Field, Visit};
+use tracing::{Event, Subscriber};
 use tracing_subscriber::layer::Context;
 
 struct MessageVisitor {
@@ -92,7 +92,10 @@ impl<S: Subscriber> tracing_subscriber::Layer<S> for LogBufferLayer {
             return;
         }
         let level = meta.level().to_string();
-        let mut visitor = MessageVisitor { message: String::new(), fields: Vec::new() };
+        let mut visitor = MessageVisitor {
+            message: String::new(),
+            fields: Vec::new(),
+        };
         event.record(&mut visitor);
         if !visitor.message.is_empty() {
             let full = if visitor.fields.is_empty() {

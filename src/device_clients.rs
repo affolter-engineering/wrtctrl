@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[cfg(feature = "ssr")]
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 #[cfg(feature = "ssr")]
 use reqwest::Response;
@@ -72,7 +72,10 @@ fn normalized_host(device: &DeviceConfig) -> Result<String, DeviceClientError> {
         return Err(DeviceClientError::MissingHost);
     }
 
-    Ok(host.trim_start_matches("http://").trim_start_matches("https://").to_string())
+    Ok(host
+        .trim_start_matches("http://")
+        .trim_start_matches("https://")
+        .to_string())
 }
 
 #[cfg(feature = "ssr")]
@@ -107,7 +110,10 @@ fn build_http_client(device: &DeviceConfig) -> Result<reqwest::Client, DeviceCli
 }
 
 #[cfg(feature = "ssr")]
-async fn parse_json_response(response: Response, context: &str) -> Result<Value, DeviceClientError> {
+async fn parse_json_response(
+    response: Response,
+    context: &str,
+) -> Result<Value, DeviceClientError> {
     let response = response.error_for_status()?;
     let content_type = response
         .headers()
@@ -121,7 +127,9 @@ async fn parse_json_response(response: Response, context: &str) -> Result<Value,
         Ok(value) => Ok(value),
         Err(error) => {
             let snippet: String = trimmed.chars().take(120).collect();
-            let response_hint = if trimmed.starts_with("<!doctype html") || trimmed.starts_with("<html") {
+            let response_hint = if trimmed.starts_with("<!doctype html")
+                || trimmed.starts_with("<html")
+            {
                 "received HTML instead of JSON; /ubus is serving the web UI rather than the JSON-RPC endpoint. On RutOS 07.18+ this usually means the JSON-RPC support package is not installed or the endpoint is disabled"
             } else {
                 "received a non-JSON response"
@@ -241,7 +249,11 @@ fn push_iface_details(iface: &Value, prefix: &str, details: &mut Vec<DeviceConne
     let up = iface.get("up").and_then(|v| v.as_bool()).unwrap_or(false);
     details.push(DeviceConnectionDetail {
         label: format!("{prefix} Connected"),
-        value: if up { "Yes".to_string() } else { "No".to_string() },
+        value: if up {
+            "Yes".to_string()
+        } else {
+            "No".to_string()
+        },
     });
 
     if let Some(ip) = iface
@@ -306,7 +318,9 @@ fn password(device: &DeviceConfig) -> Result<String, DeviceClientError> {
 }
 
 #[cfg(feature = "ssr")]
-pub async fn probe_device(device: &DeviceConfig) -> Result<DeviceConnectionStatus, DeviceClientError> {
+pub async fn probe_device(
+    device: &DeviceConfig,
+) -> Result<DeviceConnectionStatus, DeviceClientError> {
     let platform = DevicePlatform::parse(device.device_type.as_deref());
 
     match platform {
@@ -316,7 +330,9 @@ pub async fn probe_device(device: &DeviceConfig) -> Result<DeviceConnectionStatu
 }
 
 #[cfg(not(feature = "ssr"))]
-pub async fn probe_device(_device: &DeviceConfig) -> Result<DeviceConnectionStatus, DeviceClientError> {
+pub async fn probe_device(
+    _device: &DeviceConfig,
+) -> Result<DeviceConnectionStatus, DeviceClientError> {
     Err(DeviceClientError::UnsupportedDeviceType(
         "device communication is only available on the server".to_string(),
     ))
@@ -341,11 +357,7 @@ async fn teltonika_login(
         ]
     });
 
-    let response = client
-        .post(ubus_url)
-        .json(&login_payload)
-        .send()
-        .await?;
+    let response = client.post(ubus_url).json(&login_payload).send().await?;
     let response = parse_json_response(response, "Teltonika login failed").await?;
 
     // result is [error_code, {ubus_rpc_session: "...", ...}]
@@ -366,7 +378,9 @@ async fn teltonika_login(
 }
 
 #[cfg(feature = "ssr")]
-async fn probe_teltonika(device: &DeviceConfig) -> Result<DeviceConnectionStatus, DeviceClientError> {
+async fn probe_teltonika(
+    device: &DeviceConfig,
+) -> Result<DeviceConnectionStatus, DeviceClientError> {
     let host = normalized_host(device)?;
     let base_url = base_url(device)?;
     let username = username(device)?;
@@ -492,7 +506,9 @@ async fn probe_teltonika(device: &DeviceConfig) -> Result<DeviceConnectionStatus
             "params": [session_id.clone(), "network.interface", "status", {"interface": iface_name}]
         });
         if let Ok(resp) = client.post(&ubus_url).json(&iface_payload).send().await {
-            if let Ok(body) = parse_json_response(resp, &format!("Teltonika {prefix} query failed")).await {
+            if let Ok(body) =
+                parse_json_response(resp, &format!("Teltonika {prefix} query failed")).await
+            {
                 let result_obj = body
                     .get("result")
                     .and_then(|r| r.as_array())
@@ -523,7 +539,11 @@ async fn probe_teltonika(device: &DeviceConfig) -> Result<DeviceConnectionStatus
                 .and_then(|obj| obj.get("data"))
                 .and_then(|v| v.as_str())
             {
-                if let Some(secs) = uptime_str.split_whitespace().next().and_then(|s| s.parse::<f64>().ok()) {
+                if let Some(secs) = uptime_str
+                    .split_whitespace()
+                    .next()
+                    .and_then(|s| s.parse::<f64>().ok())
+                {
                     details.push(DeviceConnectionDetail {
                         label: "Uptime".to_string(),
                         value: format_uptime(secs as u64),
@@ -663,7 +683,11 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
             })
             .and_then(|v| v.as_object())
         {
-            if let Some(model) = obj.get("model").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+            if let Some(model) = obj
+                .get("model")
+                .and_then(|v| v.as_str())
+                .filter(|v| !v.is_empty())
+            {
                 details.push(DeviceConnectionDetail {
                     label: "Model".to_string(),
                     value: model.to_string(),
@@ -671,21 +695,33 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
                 title = model.to_string();
             }
 
-            if let Some(hostname) = obj.get("hostname").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+            if let Some(hostname) = obj
+                .get("hostname")
+                .and_then(|v| v.as_str())
+                .filter(|v| !v.is_empty())
+            {
                 details.push(DeviceConnectionDetail {
                     label: "Hostname".to_string(),
                     value: hostname.to_string(),
                 });
             }
 
-            if let Some(system) = obj.get("system").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+            if let Some(system) = obj
+                .get("system")
+                .and_then(|v| v.as_str())
+                .filter(|v| !v.is_empty())
+            {
                 details.push(DeviceConnectionDetail {
                     label: "System".to_string(),
                     value: system.to_string(),
                 });
             }
 
-            if let Some(kernel) = obj.get("kernel").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+            if let Some(kernel) = obj
+                .get("kernel")
+                .and_then(|v| v.as_str())
+                .filter(|v| !v.is_empty())
+            {
                 details.push(DeviceConnectionDetail {
                     label: "Kernel".to_string(),
                     value: kernel.to_string(),
@@ -770,7 +806,8 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
             "params": [session_id, "network.interface", "dump", {}]
         });
         if let Ok(resp) = client.post(&ubus_url).json(&net_payload).send().await {
-            if let Ok(body) = parse_json_response(resp, "OpenWrt interface dump query failed").await {
+            if let Ok(body) = parse_json_response(resp, "OpenWrt interface dump query failed").await
+            {
                 if let Some(interfaces) = body
                     .get("result")
                     .and_then(|r| r.as_array())
@@ -816,14 +853,22 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
         .json(&login_payload)
         .send()
         .await?;
-    let login_json = parse_json_response(login_response, "OpenWrt/Turris LuCI login failed").await?;
-    let token = extract_openwrt_token(&login_json)
-        .ok_or_else(|| DeviceClientError::DeviceLogin("missing auth token from LuCI RPC".to_string()))?;
+    let login_json =
+        parse_json_response(login_response, "OpenWrt/Turris LuCI login failed").await?;
+    let token = extract_openwrt_token(&login_json).ok_or_else(|| {
+        DeviceClientError::DeviceLogin("missing auth token from LuCI RPC".to_string())
+    })?;
 
-    if let Some(board_text) = luci_exec_sys(&client, &base_url, &token, "ubus call system board").await? {
+    if let Some(board_text) =
+        luci_exec_sys(&client, &base_url, &token, "ubus call system board").await?
+    {
         if let Ok(board) = serde_json::from_str::<Value>(&board_text) {
             if let Some(obj) = board.as_object() {
-                if let Some(model) = obj.get("model").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+                if let Some(model) = obj
+                    .get("model")
+                    .and_then(|v| v.as_str())
+                    .filter(|v| !v.is_empty())
+                {
                     details.push(DeviceConnectionDetail {
                         label: "Model".to_string(),
                         value: model.to_string(),
@@ -831,21 +876,33 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
                     title = model.to_string();
                 }
 
-                if let Some(hostname) = obj.get("hostname").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+                if let Some(hostname) = obj
+                    .get("hostname")
+                    .and_then(|v| v.as_str())
+                    .filter(|v| !v.is_empty())
+                {
                     details.push(DeviceConnectionDetail {
                         label: "Hostname".to_string(),
                         value: hostname.to_string(),
                     });
                 }
 
-                if let Some(system) = obj.get("system").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+                if let Some(system) = obj
+                    .get("system")
+                    .and_then(|v| v.as_str())
+                    .filter(|v| !v.is_empty())
+                {
                     details.push(DeviceConnectionDetail {
                         label: "System".to_string(),
                         value: system.to_string(),
                     });
                 }
 
-                if let Some(kernel) = obj.get("kernel").and_then(|v| v.as_str()).filter(|v| !v.is_empty()) {
+                if let Some(kernel) = obj
+                    .get("kernel")
+                    .and_then(|v| v.as_str())
+                    .filter(|v| !v.is_empty())
+                {
                     details.push(DeviceConnectionDetail {
                         label: "Kernel".to_string(),
                         value: kernel.to_string(),
@@ -869,7 +926,9 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
     }
 
     if details.iter().all(|d| d.label != "Hostname") {
-        if let Some(hostname) = luci_exec_sys(&client, &base_url, &token, "cat /proc/sys/kernel/hostname").await? {
+        if let Some(hostname) =
+            luci_exec_sys(&client, &base_url, &token, "cat /proc/sys/kernel/hostname").await?
+        {
             details.push(DeviceConnectionDetail {
                 label: "Hostname".to_string(),
                 value: hostname,
@@ -878,7 +937,9 @@ async fn probe_openwrt(device: &DeviceConfig) -> Result<DeviceConnectionStatus, 
     }
 
     if details.iter().all(|d| d.label != "Firmware") {
-        if let Some(release_file) = luci_exec_sys(&client, &base_url, &token, "cat /etc/openwrt_release").await? {
+        if let Some(release_file) =
+            luci_exec_sys(&client, &base_url, &token, "cat /etc/openwrt_release").await?
+        {
             if let Some(desc_line) = release_file
                 .lines()
                 .find(|line| line.starts_with("DISTRIB_DESCRIPTION="))

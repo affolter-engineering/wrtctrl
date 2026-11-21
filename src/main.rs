@@ -10,22 +10,26 @@ async fn main() {
     use std::path::{Path, PathBuf};
 
     use axum::{
-        extract::State,
-        http::{header::CONTENT_TYPE, HeaderMap, StatusCode},
-        response::IntoResponse,
         Router,
+        extract::State,
+        http::{HeaderMap, StatusCode, header::CONTENT_TYPE},
+        response::IntoResponse,
     };
     use leptos::prelude::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
-    use wrtctrl::app::{shell, App};
+    use leptos_axum::{LeptosRoutes, generate_route_list};
     use tracing::{error, info, warn};
+    use wrtctrl::app::{App, shell};
 
     use tracing_subscriber::prelude::*;
 
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("wrtctrl=info"));
     let _ = tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_target(true).with_filter(env_filter))
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_filter(env_filter),
+        )
         .with(wrtctrl::log_buffer::LogBufferLayer)
         .try_init();
 
@@ -54,8 +58,8 @@ async fn main() {
             }
 
             let source = candidate.display().to_string();
-            let contents =
-                std::fs::read_to_string(&candidate).map_err(|e| format!("Failed reading {source}: {e}"))?;
+            let contents = std::fs::read_to_string(&candidate)
+                .map_err(|e| format!("Failed reading {source}: {e}"))?;
 
             let parsed: toml::Value = contents
                 .parse()
@@ -71,14 +75,15 @@ async fn main() {
                                 return Ok(Some(port as u16));
                             }
 
-                            return Err(format!("Invalid '{key}' in {source}: must be between 1 and 65535"));
+                            return Err(format!(
+                                "Invalid '{key}' in {source}: must be between 1 and 65535"
+                            ));
                         }
 
                         if let Some(port) = value.as_str() {
-                            let parsed = port
-                                .trim()
-                                .parse::<u16>()
-                                .map_err(|_| format!("Invalid '{key}' in {source}: must be an integer"))?;
+                            let parsed = port.trim().parse::<u16>().map_err(|_| {
+                                format!("Invalid '{key}' in {source}: must be an integer")
+                            })?;
                             return Ok(Some(parsed));
                         }
 
@@ -91,25 +96,28 @@ async fn main() {
                                 return Ok(Some(port as u16));
                             }
 
-                            return Err(format!("Invalid 'server.{key}' in {source}: must be between 1 and 65535"));
+                            return Err(format!(
+                                "Invalid 'server.{key}' in {source}: must be between 1 and 65535"
+                            ));
                         }
 
                         if let Some(port) = value.as_str() {
-                            let parsed = port
-                                .trim()
-                                .parse::<u16>()
-                                .map_err(|_| format!("Invalid 'server.{key}' in {source}: must be an integer"))?;
+                            let parsed = port.trim().parse::<u16>().map_err(|_| {
+                                format!("Invalid 'server.{key}' in {source}: must be an integer")
+                            })?;
                             return Ok(Some(parsed));
                         }
 
-                        return Err(format!("Invalid 'server.{key}' in {source}: must be an integer"));
+                        return Err(format!(
+                            "Invalid 'server.{key}' in {source}: must be an integer"
+                        ));
                     }
                 }
 
                 Ok(None)
             };
 
-            if let Some(port) = read_port(&["port", "listen_port"]) ? {
+            if let Some(port) = read_port(&["port", "listen_port"])? {
                 return Ok(Some(ListenerConfig { port, source }));
             }
 
@@ -123,7 +131,10 @@ async fn main() {
         css.strip_prefix("@import \"tailwindcss\";")
             .unwrap_or(css.as_str())
             .strip_prefix("@source \"../src/**/*.rs\";")
-            .unwrap_or_else(|| css.strip_prefix("@import \"tailwindcss\";").unwrap_or(css.as_str()))
+            .unwrap_or_else(|| {
+                css.strip_prefix("@import \"tailwindcss\";")
+                    .unwrap_or(css.as_str())
+            })
             .to_string()
     }
 
@@ -148,7 +159,10 @@ async fn main() {
 
     async fn js_handler(State(leptos_options): State<LeptosOptions>) -> impl IntoResponse {
         let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, "text/javascript; charset=utf-8".parse().unwrap());
+        headers.insert(
+            CONTENT_TYPE,
+            "text/javascript; charset=utf-8".parse().unwrap(),
+        );
 
         if !EMBEDDED_JS.is_empty() {
             return (headers, EMBEDDED_JS).into_response();
@@ -179,7 +193,11 @@ async fn main() {
         let preferred = pkg_dir.join(format!("{}_bg.wasm", leptos_options.output_name.as_ref()));
         let fallback = pkg_dir.join(format!("{}.wasm", leptos_options.output_name.as_ref()));
 
-        let wasm_path = if preferred.exists() { preferred } else { fallback };
+        let wasm_path = if preferred.exists() {
+            preferred
+        } else {
+            fallback
+        };
 
         match std::fs::read(wasm_path) {
             Ok(bytes) => (headers, bytes).into_response(),
@@ -188,7 +206,9 @@ async fn main() {
     }
 
     let load_configuration = || {
-        let current_dir_manifest = std::env::current_dir().ok().map(|dir| dir.join("Cargo.toml"));
+        let current_dir_manifest = std::env::current_dir()
+            .ok()
+            .map(|dir| dir.join("Cargo.toml"));
         if let Some(path) = current_dir_manifest.as_ref().filter(|path| path.exists()) {
             if let Some(path_str) = path.to_str() {
                 if let Ok(conf) = get_configuration(Some(path_str)) {
@@ -209,10 +229,8 @@ async fn main() {
         }
 
         let embedded_manifest = include_str!("../Cargo.toml");
-        let embedded_manifest_path = std::env::temp_dir().join(format!(
-            "wrtctrl-{}-Cargo.toml",
-            std::process::id()
-        ));
+        let embedded_manifest_path =
+            std::env::temp_dir().join(format!("wrtctrl-{}-Cargo.toml", std::process::id()));
         let _ = std::fs::write(&embedded_manifest_path, embedded_manifest);
 
         if let Some(path_str) = embedded_manifest_path.to_str() {
@@ -297,11 +315,16 @@ async fn main() {
         .fallback(leptos_axum::file_and_error_handler(shell))
         .with_state(leptos_options);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap_or_else(|e| {
-        error!(%addr, error = %e, "Failed to bind listener");
-        error!(port = addr.port(), "Another process may already be using this port");
-        std::process::exit(1);
-    });
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .unwrap_or_else(|e| {
+            error!(%addr, error = %e, "Failed to bind listener");
+            error!(
+                port = addr.port(),
+                "Another process may already be using this port"
+            );
+            std::process::exit(1);
+        });
     info!(%addr, "Listening");
     axum::serve(listener, app).await.unwrap_or_else(|e| {
         error!(error = %e, "Server exited unexpectedly");

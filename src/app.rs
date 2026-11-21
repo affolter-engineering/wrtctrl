@@ -1,9 +1,9 @@
 use crate::device_clients::DeviceConnectionStatus;
 use crate::modals::{ConfigModal, DeviceDetailsModal};
-use leptos_meta::{provide_meta_context, Link, Meta, MetaTags, Stylesheet, Title};
 use leptos::prelude::*;
-use leptos_router::components::{Route, Router, Routes};
+use leptos_meta::{Link, Meta, MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::StaticSegment;
+use leptos_router::components::{Route, Router, Routes};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct DeviceConfig {
@@ -52,12 +52,20 @@ pub async fn read_raw_toml() -> Result<String, ServerFnError> {
 
         let config_path = match config_path {
             Some(p) => p,
-            None => return Err(ServerFnError::ServerError("Config file not found".to_string())),
+            None => {
+                return Err(ServerFnError::ServerError(
+                    "Config file not found".to_string(),
+                ));
+            }
         };
 
         let contents = match std::fs::read_to_string(&config_path) {
             Ok(c) => c,
-            Err(e) => return Err(ServerFnError::ServerError(format!("Failed reading config: {e}"))),
+            Err(e) => {
+                return Err(ServerFnError::ServerError(format!(
+                    "Failed reading config: {e}"
+                )));
+            }
         };
 
         tracing::info!(path = %config_path.display(), "Reading configuration");
@@ -97,12 +105,14 @@ pub async fn write_raw_toml(raw: String) -> Result<(), ServerFnError> {
 
         let config_path = config_path.unwrap_or_else(|| PathBuf::from("./wrtctrl.toml"));
 
-        if let Err(e) = raw.parse::<toml::Value>() {
+        if let Err(e) = toml::from_str::<toml::Value>(&raw) {
             return Err(ServerFnError::ServerError(format!("Invalid TOML: {e}")));
         }
 
         if let Err(e) = std::fs::write(&config_path, raw) {
-            return Err(ServerFnError::ServerError(format!("Failed writing config: {e}")));
+            return Err(ServerFnError::ServerError(format!(
+                "Failed writing config: {e}"
+            )));
         }
 
         Ok(())
@@ -117,7 +127,7 @@ pub async fn write_raw_toml(raw: String) -> Result<(), ServerFnError> {
 #[server]
 pub async fn read_toml_config() -> Result<ConfigData, ServerFnError> {
     let raw = read_raw_toml().await?;
-    let parsed = match raw.parse::<toml::Value>() {
+    let parsed = match toml::from_str::<toml::Value>(&raw) {
         Ok(value) => value,
         Err(e) => return Err(ServerFnError::ServerError(format!("Invalid TOML: {e}"))),
     };
@@ -175,7 +185,7 @@ pub async fn read_toml_config() -> Result<ConfigData, ServerFnError> {
 #[server]
 pub async fn read_generic_config() -> Result<GenericConfig, ServerFnError> {
     let raw = read_raw_toml().await?;
-    let parsed = match raw.parse::<toml::Value>() {
+    let parsed = match toml::from_str::<toml::Value>(&raw) {
         Ok(value) => value,
         Err(e) => return Err(ServerFnError::ServerError(format!("Invalid TOML: {e}"))),
     };
@@ -203,7 +213,7 @@ pub async fn write_generic_config(config: GenericConfig) -> Result<(), ServerFnE
     let mut toml_value = if raw.trim().is_empty() {
         toml::Value::Table(toml::map::Map::new())
     } else {
-        match raw.parse::<toml::Value>() {
+        match toml::from_str::<toml::Value>(&raw) {
             Ok(value) => value,
             Err(e) => return Err(ServerFnError::ServerError(format!("Invalid TOML: {e}"))),
         }
@@ -211,7 +221,11 @@ pub async fn write_generic_config(config: GenericConfig) -> Result<(), ServerFnE
 
     let table = match toml_value.as_table_mut() {
         Some(table) => table,
-        None => return Err(ServerFnError::ServerError("Invalid TOML structure".to_string())),
+        None => {
+            return Err(ServerFnError::ServerError(
+                "Invalid TOML structure".to_string(),
+            ));
+        }
     };
 
     let generic_entry = table
@@ -220,7 +234,11 @@ pub async fn write_generic_config(config: GenericConfig) -> Result<(), ServerFnE
 
     let generic_table = match generic_entry.as_table_mut() {
         Some(t) => t,
-        None => return Err(ServerFnError::ServerError("Invalid [generic] section".to_string())),
+        None => {
+            return Err(ServerFnError::ServerError(
+                "Invalid [generic] section".to_string(),
+            ));
+        }
     };
 
     generic_table.insert(
@@ -230,14 +248,20 @@ pub async fn write_generic_config(config: GenericConfig) -> Result<(), ServerFnE
 
     let new_contents = match toml::to_string_pretty(&toml_value) {
         Ok(contents) => contents,
-        Err(e) => return Err(ServerFnError::ServerError(format!("Failed serializing TOML: {e}"))),
+        Err(e) => {
+            return Err(ServerFnError::ServerError(format!(
+                "Failed serializing TOML: {e}"
+            )));
+        }
     };
 
     write_raw_toml(new_contents).await
 }
 
 #[server]
-pub async fn read_device_status(device: DeviceConfig) -> Result<DeviceConnectionStatus, ServerFnError> {
+pub async fn read_device_status(
+    device: DeviceConfig,
+) -> Result<DeviceConnectionStatus, ServerFnError> {
     #[cfg(feature = "ssr")]
     {
         let name = device.name.clone();
@@ -245,7 +269,9 @@ pub async fn read_device_status(device: DeviceConfig) -> Result<DeviceConnection
         tracing::info!(device = %name, ip = %ip, "Polling device");
         let result = crate::device_clients::probe_device(&device).await;
         match &result {
-            Ok(status) => tracing::info!(device = %name, summary = %status.summary, "Device reachable"),
+            Ok(status) => {
+                tracing::info!(device = %name, summary = %status.summary, "Device reachable")
+            }
             Err(error) => tracing::warn!(device = %name, error = %error, "Device unreachable"),
         }
         return result.map_err(|error| ServerFnError::ServerError(error.to_string()));
@@ -334,7 +360,7 @@ pub async fn write_toml_config(config: ConfigData) -> Result<(), ServerFnError> 
     let mut toml_value = if raw.trim().is_empty() {
         toml::Value::Table(toml::map::Map::new())
     } else {
-        match raw.parse::<toml::Value>() {
+        match toml::from_str::<toml::Value>(&raw) {
             Ok(value) => value,
             Err(e) => return Err(ServerFnError::ServerError(format!("Invalid TOML: {e}"))),
         }
@@ -342,7 +368,11 @@ pub async fn write_toml_config(config: ConfigData) -> Result<(), ServerFnError> 
 
     let table = match toml_value.as_table_mut() {
         Some(table) => table,
-        None => return Err(ServerFnError::ServerError("Invalid TOML structure".to_string())),
+        None => {
+            return Err(ServerFnError::ServerError(
+                "Invalid TOML structure".to_string(),
+            ));
+        }
     };
 
     let mut devices_array = Vec::new();
@@ -382,12 +412,15 @@ pub async fn write_toml_config(config: ConfigData) -> Result<(), ServerFnError> 
 
     let new_contents = match toml::to_string_pretty(&toml_value) {
         Ok(contents) => contents,
-        Err(e) => return Err(ServerFnError::ServerError(format!("Failed serializing TOML: {e}"))),
+        Err(e) => {
+            return Err(ServerFnError::ServerError(format!(
+                "Failed serializing TOML: {e}"
+            )));
+        }
     };
 
     write_raw_toml(new_contents).await
 }
-
 
 #[cfg(feature = "ssr")]
 fn read_instance_name_sync() -> String {
@@ -473,11 +506,17 @@ pub fn App() -> impl IntoView {
         entries: debug_entries,
     });
     let app_refresh_tick = RwSignal::new(0_u64);
-    provide_context(AppRefreshBus { tick: app_refresh_tick });
+    provide_context(AppRefreshBus {
+        tick: app_refresh_tick,
+    });
     let config_refresh_tick = RwSignal::new(0_u64);
-    provide_context(ConfigRefreshBus { tick: config_refresh_tick });
+    provide_context(ConfigRefreshBus {
+        tick: config_refresh_tick,
+    });
     let device_modal_signal = RwSignal::new(None::<String>);
-    provide_context(DeviceModalBus { signal: device_modal_signal });
+    provide_context(DeviceModalBus {
+        signal: device_modal_signal,
+    });
 
     #[cfg(feature = "hydrate")]
     {
@@ -486,14 +525,12 @@ pub fn App() -> impl IntoView {
 
         let polling_interval_seconds = RwSignal::new(20_u64);
 
-        let polling_interval_resource = LocalResource::new(
-            || async move {
-                read_generic_config()
-                    .await
-                    .map(|cfg| cfg.polling_interval.max(1))
-                    .unwrap_or(20)
-            },
-        );
+        let polling_interval_resource = LocalResource::new(|| async move {
+            read_generic_config()
+                .await
+                .map(|cfg| cfg.polling_interval.max(1))
+                .unwrap_or(20)
+        });
 
         Effect::new(move |_| {
             if let Some(interval) = polling_interval_resource.get() {
@@ -517,9 +554,11 @@ pub fn App() -> impl IntoView {
         mem::forget(refresh_interval);
     }
 
-    let page_brand = LocalResource::new(
-        || async move { read_instance_name().await.unwrap_or_else(|_| "wrtctrl".to_string()) },
-    );
+    let page_brand = LocalResource::new(|| async move {
+        read_instance_name()
+            .await
+            .unwrap_or_else(|_| "wrtctrl".to_string())
+    });
 
     view! {
         <Title text=move || format!("{} Welcome", page_brand.get().unwrap_or_else(|| "wrtctrl".to_string())) />
@@ -564,7 +603,6 @@ fn Navbar() -> impl IntoView {
         </nav>
     }
 }
-
 
 #[component]
 fn Footer() -> impl IntoView {
@@ -683,7 +721,6 @@ fn Footer() -> impl IntoView {
     }
 }
 
-
 #[component]
 fn NotificationArea() -> impl IntoView {
     let app_stats_bus = use_context::<AppStatsBus>();
@@ -731,7 +768,7 @@ fn HomePage() -> impl IntoView {
             // </header>
 
             <NotificationArea />
-        
+
             <DevicesCard />
 
             <div class="flex flex-col gap-4">
@@ -886,16 +923,17 @@ fn DeviceCard(device: DeviceConfig, show_details: RwSignal<Option<String>>) -> i
     let show_reboot_confirm = RwSignal::new(false);
     let reboot_error = RwSignal::new(None);
     let device_for_resource = device.clone();
-    let device_status = Resource::new(move || (refresh_tick.get(), global_refresh_tick.get()), move |_| {
-        let device = device_for_resource.clone();
-        async move { read_device_status(device).await }
-    });
+    let device_status = Resource::new(
+        move || (refresh_tick.get(), global_refresh_tick.get()),
+        move |_| {
+            let device = device_for_resource.clone();
+            async move { read_device_status(device).await }
+        },
+    );
 
     let reboot_action = create_action(move |device: &DeviceConfig| {
         let device = device.clone();
-        async move {
-            reboot_device_action(device).await
-        }
+        async move { reboot_device_action(device).await }
     });
 
     create_effect(move |_| {
@@ -927,7 +965,9 @@ fn DeviceCard(device: DeviceConfig, show_details: RwSignal<Option<String>>) -> i
                     card_footer.set(Some((status.title.clone(), status.summary.clone())));
                     if let Some(bus) = app_stats_bus {
                         bus.stats.update(|stats| {
-                            stats.device_statuses.insert(device_name_for_stats.clone(), Some(status.connected));
+                            stats
+                                .device_statuses
+                                .insert(device_name_for_stats.clone(), Some(status.connected));
                         });
                     }
                 }
@@ -936,7 +976,9 @@ fn DeviceCard(device: DeviceConfig, show_details: RwSignal<Option<String>>) -> i
                     card_footer.set(None);
                     if let Some(bus) = app_stats_bus {
                         bus.stats.update(|stats| {
-                            stats.device_statuses.insert(device_name_for_stats.clone(), Some(false));
+                            stats
+                                .device_statuses
+                                .insert(device_name_for_stats.clone(), Some(false));
                         });
                     }
                 }
@@ -1051,7 +1093,9 @@ fn LogOutputCard() -> impl IntoView {
     });
 
     Effect::new(move |_| {
-        let Some(debug_bus) = debug_bus else { return; };
+        let Some(debug_bus) = debug_bus else {
+            return;
+        };
         if let Some(Ok(entries)) = server_logs.get() {
             if entries.is_empty() {
                 return;
@@ -1111,15 +1155,16 @@ fn LogOutputCard() -> impl IntoView {
 
 #[component]
 fn InstanceName() -> impl IntoView {
-    let brand_name = LocalResource::new(
-        || async move { read_instance_name().await.unwrap_or_else(|_| "wrtctrl".to_string()) },
-    );
+    let brand_name = LocalResource::new(|| async move {
+        read_instance_name()
+            .await
+            .unwrap_or_else(|_| "wrtctrl".to_string())
+    });
 
     view! {
         {move || brand_name.get().unwrap_or_else(|| "wrtctrl".to_string())}
     }
 }
-
 
 #[component]
 fn StatusBadge() -> impl IntoView {
