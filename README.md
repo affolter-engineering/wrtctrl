@@ -83,13 +83,13 @@ The shell provides: rustc, cargo, cargo-make, cargo-leptos, tailwindcss, lld, wa
 
 ## Quick start
 
-1. Enter the dev shell:
+Enter the dev shell:
 
 ```bash
 nix-shell
 ```
 
-2. Create a configuration file. Example `wrtctrl.toml` (use the *.sample file to get started):
+Create a configuration file. Example `wrtctrl.toml` (use the *.sample file to get started):
 
 ```toml
 [generic]
@@ -110,13 +110,13 @@ username = "root"
 password = "pasword"
 ```
 
-3. Start the hot-reload development server:
+Start the hot-reload development server:
 
 ```bash
 cargo make dev
 ```
 
-4. Open: http://127.0.0.1:3011
+Open: http://127.0.0.1:3011
 
 ## Build and run
 
